@@ -164,6 +164,7 @@ err0:
 int
 crypto_keys_subr_import_RSA_priv(RSA ** key, const uint8_t * buf, size_t buflen)
 {
+	BIGNUM * n, * e, * d, * p, * q, * dmp1, * dmq1, * iqmp;
 
 	/* Free any existing key. */
 	if (*key != NULL)
@@ -176,26 +177,36 @@ crypto_keys_subr_import_RSA_priv(RSA ** key, const uint8_t * buf, size_t buflen)
 	}
 
 	/* Load values. */
-	if (import_BN(&(*key)->n, &buf, &buflen))
+	if (import_BN(&n, &buf, &buflen))
 		goto err1;
-	if (import_BN(&(*key)->e, &buf, &buflen))
+	if (import_BN(&e, &buf, &buflen))
 		goto err1;
-	if (import_BN(&(*key)->d, &buf, &buflen))
+	if (import_BN(&d, &buf, &buflen))
 		goto err1;
-	if (import_BN(&(*key)->p, &buf, &buflen))
+	if (import_BN(&p, &buf, &buflen))
 		goto err1;
-	if (import_BN(&(*key)->q, &buf, &buflen))
+	if (import_BN(&q, &buf, &buflen))
 		goto err1;
-	if (import_BN(&(*key)->dmp1, &buf, &buflen))
+	if (import_BN(&dmp1, &buf, &buflen))
 		goto err1;
-	if (import_BN(&(*key)->dmq1, &buf, &buflen))
+	if (import_BN(&dmq1, &buf, &buflen))
 		goto err1;
-	if (import_BN(&(*key)->iqmp, &buf, &buflen))
+	if (import_BN(&iqmp, &buf, &buflen))
 		goto err1;
 
 	/* We should have no unprocessed data left. */
 	if (buflen)
 		goto err1;
+
+	/* Load values into the RSA key. */
+	(*key)->n = n;
+	(*key)->e = e;
+	(*key)->d = d;
+	(*key)->p = p;
+	(*key)->q = q;
+	(*key)->dmp1 = dmp1;
+	(*key)->dmq1 = dmq1;
+	(*key)->iqmp = iqmp;
 
 	/* Success! */
 	return (0);
@@ -215,6 +226,7 @@ err0:
 int
 crypto_keys_subr_import_RSA_pub(RSA ** key, const uint8_t * buf, size_t buflen)
 {
+	BIGNUM * n, * e;
 
 	/* Free any existing key. */
 	if (*key != NULL)
@@ -227,14 +239,18 @@ crypto_keys_subr_import_RSA_pub(RSA ** key, const uint8_t * buf, size_t buflen)
 	}
 
 	/* Load values. */
-	if (import_BN(&(*key)->n, &buf, &buflen))
+	if (import_BN(&n, &buf, &buflen))
 		goto err1;
-	if (import_BN(&(*key)->e, &buf, &buflen))
+	if (import_BN(&e, &buf, &buflen))
 		goto err1;
 
 	/* We should have no unprocessed data left. */
 	if (buflen)
 		goto err1;
+
+	/* Load values into the RSA key. */
+	(*key)->n = n;
+	(*key)->e = e;
 
 	/* Success! */
 	return (0);
@@ -299,6 +315,7 @@ err0:
 uint32_t
 crypto_keys_subr_export_RSA_priv(RSA * key, uint8_t * buf, size_t buflen)
 {
+	const BIGNUM * n, * e, * d, * p, * q, * dmp1, * dmq1, * iqmp;
 	uint32_t len = 0;
 
 	if (key == NULL) {
@@ -306,22 +323,32 @@ crypto_keys_subr_export_RSA_priv(RSA * key, uint8_t * buf, size_t buflen)
 		goto err0;
 	}
 
+	/* Get values from the RSA key. */
+	n = key->n;
+	e = key->e;
+	d = key->d;
+	p = key->p;
+	q = key->q;
+	dmp1 = key->dmp1;
+	dmq1 = key->dmq1;
+	iqmp = key->iqmp;
+
 	/* Each large integer gets exported. */
-	if (export_BN(key->n, &buf, &buflen, &len))
+	if (export_BN(n, &buf, &buflen, &len))
 		goto err0;
-	if (export_BN(key->e, &buf, &buflen, &len))
+	if (export_BN(e, &buf, &buflen, &len))
 		goto err0;
-	if (export_BN(key->d, &buf, &buflen, &len))
+	if (export_BN(d, &buf, &buflen, &len))
 		goto err0;
-	if (export_BN(key->p, &buf, &buflen, &len))
+	if (export_BN(p, &buf, &buflen, &len))
 		goto err0;
-	if (export_BN(key->q, &buf, &buflen, &len))
+	if (export_BN(q, &buf, &buflen, &len))
 		goto err0;
-	if (export_BN(key->dmp1, &buf, &buflen, &len))
+	if (export_BN(dmp1, &buf, &buflen, &len))
 		goto err0;
-	if (export_BN(key->dmq1, &buf, &buflen, &len))
+	if (export_BN(dmq1, &buf, &buflen, &len))
 		goto err0;
-	if (export_BN(key->iqmp, &buf, &buflen, &len))
+	if (export_BN(iqmp, &buf, &buflen, &len))
 		goto err0;
 
 	/* Success! */
@@ -340,6 +367,7 @@ err0:
 uint32_t
 crypto_keys_subr_export_RSA_pub(RSA * key, uint8_t * buf, size_t buflen)
 {
+	const BIGNUM * n, * e;
 	uint32_t len = 0;
 
 	if (key == NULL) {
@@ -347,10 +375,14 @@ crypto_keys_subr_export_RSA_pub(RSA * key, uint8_t * buf, size_t buflen)
 		goto err0;
 	}
 
+	/* Get values from the RSA key. */
+	n = key->n;
+	e = key->e;
+
 	/* Each large integer gets exported. */
-	if (export_BN(key->n, &buf, &buflen, &len))
+	if (export_BN(n, &buf, &buflen, &len))
 		goto err0;
-	if (export_BN(key->e, &buf, &buflen, &len))
+	if (export_BN(e, &buf, &buflen, &len))
 		goto err0;
 
 	/* Success! */
