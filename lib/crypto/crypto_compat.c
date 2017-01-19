@@ -52,6 +52,7 @@ crypto_compat_RSA_import(RSA ** key, BIGNUM * n, BIGNUM * e, BIGNUM * d,
 	      && (dmq1 != NULL) && (iqmp != NULL)));
 
 	/* Put values into RSA key. */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	(*key)->n = n;
 	(*key)->e = e;
 	if (d != NULL) {
@@ -62,9 +63,29 @@ crypto_compat_RSA_import(RSA ** key, BIGNUM * n, BIGNUM * e, BIGNUM * d,
 		(*key)->dmq1 = dmq1;
 		(*key)->iqmp = iqmp;
 	}
+#else
+	/* It's ok for d to be NULL here. */
+	if (RSA_set0_key(*key, n, e, d) != 1)
+		goto err0;
+
+	/* It's not ok for these private-related-variables to be NULL. */
+	if (d != NULL) {
+		if (RSA_set0_factors(*key, p, q) != 1)
+			goto err0;
+		if (RSA_set0_crt_params(*key, dmp1, dmq1, iqmp) != 1)
+			goto err0;
+	}
+#endif
 
 	/* Success! */
 	return (0);
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#else
+err0:
+	/* Failure! */
+	return (-1);
+#endif
 }
 
 /**
