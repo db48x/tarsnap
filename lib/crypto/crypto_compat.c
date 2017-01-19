@@ -110,6 +110,7 @@ crypto_compat_RSA_export(RSA * key, const BIGNUM ** n, const BIGNUM ** e,
 	      && (dmq1 != NULL) && (iqmp != NULL)));
 
 	/* Get values from RSA key. */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	*n = key->n;
 	*e = key->e;
 	if (d != NULL) {
@@ -120,6 +121,16 @@ crypto_compat_RSA_export(RSA * key, const BIGNUM ** n, const BIGNUM ** e,
 		*dmq1 = key->dmq1;
 		*iqmp = key->iqmp;
 	}
+#else
+	/* It's ok for d to be NULL here. */
+	RSA_get0_key(key, n, e, d);
+
+	/* It's not ok for these private-related-variables to be NULL. */
+	if (d != NULL) {
+		RSA_get0_factors(key, p, q);
+		RSA_get0_crt_params(key, dmp1, dmq1, iqmp);
+	}
+#endif
 
 	/* Success! */
 	return (0);
