@@ -166,6 +166,9 @@ crypto_keys_subr_import_RSA_priv(RSA ** key, const uint8_t * buf, size_t buflen)
 {
 	BIGNUM * n, * e, * d, * p, * q, * dmp1, * dmq1, * iqmp;
 
+	/* This simplifies the error path cleanup. */
+	n = e = d = p = q = dmp1 = dmq1 = iqmp = NULL;
+
 	/* Free any existing key. */
 	if (*key != NULL)
 		RSA_free(*key);
@@ -180,23 +183,23 @@ crypto_keys_subr_import_RSA_priv(RSA ** key, const uint8_t * buf, size_t buflen)
 	if (import_BN(&n, &buf, &buflen))
 		goto err1;
 	if (import_BN(&e, &buf, &buflen))
-		goto err1;
+		goto err2;
 	if (import_BN(&d, &buf, &buflen))
-		goto err1;
+		goto err2;
 	if (import_BN(&p, &buf, &buflen))
-		goto err1;
+		goto err2;
 	if (import_BN(&q, &buf, &buflen))
-		goto err1;
+		goto err2;
 	if (import_BN(&dmp1, &buf, &buflen))
-		goto err1;
+		goto err2;
 	if (import_BN(&dmq1, &buf, &buflen))
-		goto err1;
+		goto err2;
 	if (import_BN(&iqmp, &buf, &buflen))
-		goto err1;
+		goto err2;
 
 	/* We should have no unprocessed data left. */
 	if (buflen)
-		goto err1;
+		goto err2;
 
 	/* Load values into the RSA key. */
 	(*key)->n = n;
@@ -211,6 +214,15 @@ crypto_keys_subr_import_RSA_priv(RSA ** key, const uint8_t * buf, size_t buflen)
 	/* Success! */
 	return (0);
 
+err2:
+	BN_free(n);
+	BN_free(e);
+	BN_clear_free(d);
+	BN_clear_free(p);
+	BN_clear_free(q);
+	BN_clear_free(dmp1);
+	BN_clear_free(dmq1);
+	BN_clear_free(iqmp);
 err1:
 	RSA_free(*key);
 	*key = NULL;
@@ -228,6 +240,9 @@ crypto_keys_subr_import_RSA_pub(RSA ** key, const uint8_t * buf, size_t buflen)
 {
 	BIGNUM * n, * e;
 
+	/* This simplifies the error path cleanup. */
+	n = e = NULL;
+
 	/* Free any existing key. */
 	if (*key != NULL)
 		RSA_free(*key);
@@ -242,11 +257,11 @@ crypto_keys_subr_import_RSA_pub(RSA ** key, const uint8_t * buf, size_t buflen)
 	if (import_BN(&n, &buf, &buflen))
 		goto err1;
 	if (import_BN(&e, &buf, &buflen))
-		goto err1;
+		goto err2;
 
 	/* We should have no unprocessed data left. */
 	if (buflen)
-		goto err1;
+		goto err2;
 
 	/* Load values into the RSA key. */
 	(*key)->n = n;
@@ -255,6 +270,9 @@ crypto_keys_subr_import_RSA_pub(RSA ** key, const uint8_t * buf, size_t buflen)
 	/* Success! */
 	return (0);
 
+err2:
+	BN_free(n);
+	BN_free(e);
 err1:
 	RSA_free(*key);
 	*key = NULL;
