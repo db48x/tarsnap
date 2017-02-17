@@ -181,7 +181,7 @@ crypto_keys_subr_import_RSA_priv(RSA ** key, const uint8_t * buf, size_t buflen)
 
 	/* Load values. */
 	if (import_BN(&n, &buf, &buflen))
-		goto err1;
+		goto err2;
 	if (import_BN(&e, &buf, &buflen))
 		goto err2;
 	if (import_BN(&d, &buf, &buflen))
@@ -255,7 +255,7 @@ crypto_keys_subr_import_RSA_pub(RSA ** key, const uint8_t * buf, size_t buflen)
 
 	/* Load values. */
 	if (import_BN(&n, &buf, &buflen))
-		goto err1;
+		goto err2;
 	if (import_BN(&e, &buf, &buflen))
 		goto err2;
 
